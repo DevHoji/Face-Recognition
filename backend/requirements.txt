@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+numpy
+pillow
+sqlalchemy
+aiofiles
+python-jose
+passlib
+bcrypt
+# These libraries can be harder to install on Windows
+# You may need to install these separately or use pre-built wheels
+# opencv-python
+# dlib
+# face-recognition
