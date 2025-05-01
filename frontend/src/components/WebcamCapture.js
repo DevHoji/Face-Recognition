@@ -1,98 +1,174 @@
-import React, { useState, useRef, useCallback } from 'react';
-import Webcam from 'react-webcam';
-import { Button, Box, CircularProgress, Alert, Paper } from '@mui/material';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import ReplayIcon from '@mui/icons-material/Replay';
+import React, { useState, useRef } from "react";
+import Webcam from "react-webcam";
+import { motion } from "framer-motion";
+import {
+  Box,
+  Button,
+  Paper,
+  CircularProgress,
+  Alert,
+  useTheme,
+} from "@mui/material";
+import { CameraAlt as Camera } from "@mui/icons-material";
+import { RefreshCcw } from "lucide-react";
 
 const WebcamCapture = ({ onCapture, isLoading, error }) => {
   const [imgSrc, setImgSrc] = useState(null);
   const webcamRef = useRef(null);
+  const theme = useTheme();
 
-  const capture = useCallback(() => {
-    const imageSrc = webcamRef.current.getScreenshot();
+  const capture = () => {
+    const imageSrc = webcamRef.current?.getScreenshot();
     setImgSrc(imageSrc);
-    
-    // Convert base64 to blob for API upload
+
     if (imageSrc) {
       fetch(imageSrc)
-        .then(res => res.blob())
-        .then(blob => {
-          onCapture(blob);
-        });
+        .then((res) => res.blob())
+        .then((blob) => onCapture(blob));
     }
-  }, [webcamRef, onCapture]);
-
-  const retake = () => {
-    setImgSrc(null);
   };
 
+  const retake = () => setImgSrc(null);
+
   const videoConstraints = {
-    width: 480,
-    height: 360,
-    facingMode: "user"
+    width: 1280,
+    height: 720,
+    facingMode: "user",
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {imgSrc ? (
-        <Box sx={{ position: 'relative', width: 480, height: 360 }}>
-          <img src={imgSrc} alt="Captured" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          {isLoading && (
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              width: '100%', 
-              height: '100%', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)' 
-            }}>
-              <CircularProgress color="primary" />
-            </Box>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Paper
+        elevation={4}
+        sx={{
+          overflow: "hidden",
+          borderRadius: 2,
+          background: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <Box sx={{ p: 3 }}>
+          <Box
+            sx={{
+              position: "relative",
+              borderRadius: 2,
+              overflow: "hidden",
+              backgroundColor: theme.palette.grey[100],
+            }}
+          >
+            {imgSrc ? (
+              <motion.img
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                src={imgSrc}
+                alt="Captured"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={videoConstraints}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                }}
+              />
+            )}
+
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  borderRadius: 8,
+                }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <CircularProgress color="primary" size={60} />
+                </motion.div>
+              </motion.div>
+            )}
+          </Box>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginTop: 16 }}
+            >
+              <Alert severity="error" variant="filled" sx={{ width: "100%" }}>
+                {error}
+              </Alert>
+            </motion.div>
           )}
+
+          <Box
+            sx={{
+              mt: 3,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ display: "inline-block" }}
+            >
+              <Button
+                variant="contained"
+                onClick={imgSrc ? retake : capture}
+                disabled={isLoading}
+                startIcon={imgSrc ? <RefreshCcw size={20} /> : <Camera />}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: "50px",
+                  background: imgSrc
+                    ? theme.palette.secondary.main
+                    : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  "&:hover": {
+                    background: imgSrc
+                      ? theme.palette.secondary.dark
+                      : `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+                  },
+                  "&:disabled": {
+                    background: theme.palette.action.disabledBackground,
+                  },
+                  textTransform: "none",
+                  fontWeight: 500,
+                  minWidth: 200,
+                }}
+              >
+                {imgSrc ? "Retake Photo" : "Capture Photo"}
+              </Button>
+            </motion.div>
+          </Box>
         </Box>
-      ) : (
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          videoConstraints={videoConstraints}
-          width={480}
-          height={360}
-        />
-      )}
-      
-      {error && (
-        <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-          {error}
-        </Alert>
-      )}
-      
-      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-        {imgSrc ? (
-          <Button 
-            variant="contained" 
-            color="secondary" 
-            onClick={retake}
-            startIcon={<ReplayIcon />}
-            disabled={isLoading}
-          >
-            Retake Photo
-          </Button>
-        ) : (
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={capture}
-            startIcon={<CameraAltIcon />}
-          >
-            Capture Photo
-          </Button>
-        )}
-      </Box>
-    </Paper>
+      </Paper>
+    </motion.div>
   );
 };
 
